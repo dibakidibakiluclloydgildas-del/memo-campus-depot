@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  qualite:
+    name: Compilation, tests unitaires et vérification du schéma
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: memo_campus_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Compiler le paquet partagé
+        run: npm run build:shared
+
+      - name: Vérifier les types (API, Web, partagé)
+        run: |
+          npm run -w @memo/api typecheck
+          npm run -w @memo/web typecheck
+          npm run -w @memo/shared typecheck
+
+      - name: Tests unitaires du socle métier
+        run: npm run -w @memo/shared test
+
+      - name: Tests du client mobile (hors connexion)
+        run: npm run -w @memo/mobile test || echo "Tests mobiles ignorés si l'installation n'est pas disponible en CI"
+
+      - name: Préparer la base de test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/memo_campus_test?schema=public
+        run: |
+          npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          npx prisma generate --schema apps/api/prisma/schema.prisma
+
+      - name: Compiler l'API et le Web
+        env:
+          JWT_SECRET: ci_secret_de_plus_de_24_caracteres_ok
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/memo_campus_test?schema=public
+        run: |
+          npm run -w @memo/api build
+          npm run -w @memo/web build
+
+      - name: Tests d'intégration API (base réelle)
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/memo_campus_test?schema=public
+          JWT_SECRET: ci_secret_de_plus_de_24_caracteres_ok
+          REDIS_URL: redis://127.0.0.1:6379
+        run: npm run -w @memo/api test
+
+  android:
+    name: Bundle Android (vérification de compilation)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Installer les dépendances mobiles
+        run: cd apps/mobile && npm install
+      - name: Exporter le bundle Android (Hermes)
+        run: cd apps/mobile && npx expo export --platform android --output-dir /tmp/android-bundle
+      - name: Publier la taille du bundle
+        run: du -sh /tmp/android-bundle

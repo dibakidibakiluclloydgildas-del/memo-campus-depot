@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+
+/*
+ * Identité visuelle MÉMO CAMPUS
+ * - Bleu « confiance académique » : couleur principale
+ * - Vert « progression » : réussite, maîtrise
+ * - Ambre « attention » : notions fragiles, avertissements
+ * - Typographie système (aucun téléchargement de police : chargement rapide
+ *   même en connexion lente, contexte camerounais).
+ */
+@theme {
+  --color-memo-50: #eef4ff;
+  --color-memo-100: #dbe7ff;
+  --color-memo-200: #bdd3ff;
+  --color-memo-300: #90b4ff;
+  --color-memo-400: #5c8bfc;
+  --color-memo-500: #3763f6;
+  --color-memo-600: #2145ea;
+  --color-memo-700: #1c35d4;
+  --color-memo-800: #1e2fab;
+  --color-memo-900: #1e2d87;
+  --color-progress-500: #10b981;
+  --color-progress-600: #059669;
+  --color-warn-500: #f59e0b;
+  --color-warn-600: #d97706;
+  --color-danger-500: #ef4444;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-muted: #f6f8fc;
+  --surface-raised: #ffffff;
+  --border-subtle: #e3e9f4;
+  --text-strong: #0f172a;
+  --text-muted: #5a6b8c;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #0b1220;
+  --surface-muted: #121b2e;
+  --surface-raised: #16203a;
+  --border-subtle: #24314d;
+  --text-strong: #f1f5fd;
+  --text-muted: #a4b3cc;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--surface-muted);
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.surface {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Accessibilité : focus visible net et homogène partout. */
+:focus-visible {
+  outline: 3px solid var(--color-memo-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.prose-memo h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.prose-memo p {
+  margin-bottom: 0.75rem;
+  line-height: 1.65;
+}
+.prose-memo blockquote {
+  border-left: 3px solid var(--color-memo-400);
+  padding-left: 0.9rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0.9rem;
+  font-style: italic;
+}

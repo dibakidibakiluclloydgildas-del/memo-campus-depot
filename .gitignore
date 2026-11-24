@@ -1,0 +1,43 @@
+# Dépendances
+node_modules/
+.pnp/
+
+# Constructions
+dist/
+.next/
+out/
+build/
+.turbo/
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/dist-android/
+
+# Environnement et secrets — ne jamais versionner
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+
+# Données locales
+apps/api/var/
+var/storage/
+*.dump
+*.sql.gz
+sauvegardes/
+
+# Journaux et caches
+*.log
+npm-debug.log*
+.cache/
+coverage/
+.DS_Store
+
+# archives générées par scripts/preparer_depot_git.sh
+memo-campus-depot.tar.gz
+*.tar.gz
+
+# artefacts générés (catalogue HTML des fichiers)
+documentation/CATALOGUE_FICHIERS.html

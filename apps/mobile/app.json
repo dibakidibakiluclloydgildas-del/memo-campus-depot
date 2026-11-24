@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "MÉMO CAMPUS",
+    "slug": "memo-campus",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "memocampus",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2145ea"
+    },
+    "android": {
+      "package": "cm.memocampus.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#2145ea"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "POST_NOTIFICATIONS"],
+      "versionCode": 1
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-font"],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "apiUrl": "http://10.0.2.2:4000",
+      "note": "10.0.2.2 = localhost de la machine hôte vu depuis l'émulateur Android. En production : https://api.memo-campus.cm"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "MÉMO CAMPUS",
+  "short_name": "MÉMO",
+  "description": "Votre compagnon académique : résumés, fiches, évaluations corrigées et planning.",
+  "start_url": "/tableau-de-bord",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2145ea",
+  "lang": "fr",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

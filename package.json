@@ -1,0 +1,29 @@
+{
+  "name": "memo-campus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MÉMO CAMPUS — Plateforme EdTech intelligente (Web + Android + API)",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/shared"
+  ],
+  "scripts": {
+    "build": "npm run build -w @memo/shared && npm run build -w @memo/api && npm run build -w @memo/web",
+    "build:shared": "npm run build -w @memo/shared",
+    "dev:api": "npm run start:dev -w @memo/api",
+    "dev:web": "npm run dev -w @memo/web",
+    "test": "npm run test -w @memo/api && npm run test -w @memo/shared",
+    "test:e2e": "npm run test:e2e -w @memo/api",
+    "lint": "npm run lint -w @memo/api",
+    "db:migrate": "npm run db:migrate -w @memo/api",
+    "db:seed": "npm run db:seed -w @memo/api",
+    "db:studio": "npm run db:studio -w @memo/api",
+    "test:mobile": "cd apps/mobile && npm test",
+    "test:all": "npm run test && npm run test:mobile",
+    "typecheck": "npm run -w @memo/shared typecheck && npm run -w @memo/api typecheck && npm run -w @memo/web typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,105 @@
+# =============================================================================
+# MÉMO CAMPUS — environnement local complet (Docker Compose)
+# Lancement :  docker compose -f infrastructure/docker-compose.yml up --build
+# Web : http://localhost:3000 · API : http://localhost:4000/api · Docs : /api/docs
+# =============================================================================
+name: memo-campus
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: memo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: memo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memo_dev_password}
+      POSTGRES_DB: memo_campus
+      # UTF-8 explicite : indispensable pour le français et l'OCR
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U memo -d memo_campus']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: memo-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory', '256mb', '--maxmemory-policy', 'allkeys-lru']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infrastructure/api.Dockerfile
+    container_name: memo-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      API_URL: ${API_URL:-http://localhost:4000}
+      DATABASE_URL: postgresql://memo:${POSTGRES_PASSWORD:-memo_dev_password}@db:5432/memo_campus?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?Définissez JWT_SECRET dans votre fichier .env}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+      CORS_ORIGINS: ${APP_URL:-http://localhost:3000}
+      STORAGE_DRIVER: local
+      STORAGE_DIR: /data/storage
+      MAX_UPLOAD_MB: 25
+      AI_PROVIDER: ${AI_PROVIDER:-demo}
+      AI_DEMO_MODE: ${AI_DEMO_MODE:-true}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-local}
+      EMBEDDINGS_DIM: 768
+    volumes:
+      - storage-data:/data/storage
+    ports:
+      - '4000:4000'
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://127.0.0.1:4000/api/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: infrastructure/web.Dockerfile
+    container_name: memo-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      # Adresse interne du réseau Docker : le navigateur ne contacte jamais l'API directement
+      API_INTERNAL_URL: http://api:4000
+    ports:
+      - '3000:3000'
+
+volumes:
+  db-data:
+  redis-data:
+  storage-data:

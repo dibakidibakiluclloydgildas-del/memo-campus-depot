@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MÉMO CAMPUS — maquette de l'interface</title>
+<style>
+  /* Feuille de style autonome : aucune ressource externe (police système, SVG inline). */
+  :root{
+    --memo-50:#eef2ff; --memo-100:#e0eaff; --memo-500:#3f66f5; --memo-600:#2145ea; --memo-700:#1c35d4; --memo-900:#101a44;
+    --ink:#0f172a; --muted:#5a6b8c; --line:#e3e8f2; --surface:#ffffff; --bg:#f6f8fc;
+    --ok:#047857; --ok-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7; --bad:#b91c1c; --bad-bg:#fee2e2;
+    --radius:16px; --shadow:0 1px 2px rgba(16,26,68,.06), 0 8px 24px -12px rgba(16,26,68,.18);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header.top{background:linear-gradient(135deg,#2145ea,#10b981);color:#fff;padding:28px 24px}
+  header.top h1{margin:0;font-size:26px;letter-spacing:-.5px}
+  header.top p{margin:6px 0 0;color:#dbe7ff;font-size:14px}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  .grid{display:grid;gap:18px}
+  @media(min-width:860px){.grid.two{grid-template-columns:1.25fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:32px 0 12px}
+  h3{margin:0 0 6px;font-size:17px}
+  p{margin:0 0 10px}
+  .muted{color:var(--muted);font-size:13px}
+  .btn{display:inline-block;border:1px solid var(--memo-600);background:var(--memo-600);color:#fff;border-radius:11px;padding:10px 16px;font-weight:700;font-size:14px;text-decoration:none}
+  .btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+  .badge{display:inline-block;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:800}
+  .badge.brand{background:var(--memo-100);color:var(--memo-700)}
+  .badge.ok{background:var(--ok-bg);color:var(--ok)}
+  .badge.warn{background:var(--warn-bg);color:var(--warn)}
+  .badge.bad{background:var(--bad-bg);color:var(--bad)}
+  .kpi{font-size:28px;font-weight:900;letter-spacing:-.6px}
+  .bar{height:7px;border-radius:99px;background:#e6ebf5;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,#3f66f5,#10b981);border-radius:99px}
+  .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .nav a{font-size:12px;font-weight:700;color:var(--memo-700);background:var(--memo-50);padding:6px 10px;border-radius:99px;text-decoration:none}
+  .source{background:var(--memo-50);border-left:3px solid var(--memo-500);padding:8px 10px;border-radius:0 8px 8px 0;font-size:12px;color:#25324d;margin-top:8px}
+  .phone{width:300px;max-width:100%;border:10px solid #101a44;border-radius:34px;background:#fff;padding:12px;margin:0 auto}
+  .phone .tabs{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:10px;padding-top:8px;font-size:10px;color:var(--muted);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .note{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:12px;padding:10px}
+  .dark{background:#0b1120;color:#e8eefc;border-color:#1e2a44}
+  .dark .muted{color:#93a3c4}
+  .dark .card{background:#111a30;border-color:#1e2a44;color:#e8eefc}
+  .dark .source{background:#16224a;color:#cfe0ff}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap" style="padding:0">
+    <h1>MÉMO CAMPUS</h1>
+    <p>Comprendre, mémoriser, réussir — maquette de présentation de l'interface (Web et Android)</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="note">
+    Cette page est une <strong>maquette statique</strong> : elle montre la direction visuelle, la hiérarchie de l'information et les composants réels.
+    Elle ne contient aucune donnée réelle et n'appelle aucun serveur. L'interface effective est rendue par l'application Next.js
+    (navigation, appels API, cookie httpOnly) et par l'application Android.
+  </div>
+
+  <h2>1 · Tableau de bord</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><div><h3>Bonjour, Awa</h3><p class="muted">Offre Premium · Université de Yaoundé I</p></div><span class="badge brand">27 jours de série</span></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:9px">
+        <div class="card" style="box-shadow:none;padding:12px"><p class="eyebrow">Cours prêts</p><div class="kpi">4</div><p class="muted">sur 5 importés</p></div>
+        <div class="card" style="box-shadow:none;padding:12px"><p class="eyebrow">À revoir</p><div class="kpi" style="color:var(--warn)">12</div><p class="muted">dont 4 fragiles</p></div>
+        <div class="card" style="box-shadow:none;padding:12px"><p class="eyebrow">Réussite 7 j</p><div class="kpi">78 %</div><p class="muted">34 révisions</p></div>
+      </div>
+      <p class="eyebrow" style="margin-top:16px">Prochaine séance</p>
+      <div class="row"><div><strong>Révisions dues — Biologie cellulaire</strong><p class="muted">Aujourd'hui 18:00 · 45 min · <em>Planifiée car échéance proche et notions fragiles</em></p></div><span class="badge warn">Priorité 4</span></div>
+      <p style="margin-top:14px"><a class="btn" href="#">Commencer la révision du jour</a> <a class="btn ghost" href="#">Importer un cours</a></p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Consommation de l'offre</p>
+      <div class="row"><span class="muted">Import de cours</span><span class="muted">4 / 60</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:7%"></i></div>
+      <div class="row"><span class="muted">Générations IA</span><span class="muted">38 / 400</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:10%"></i></div>
+      <div class="row"><span class="muted">Stockage</span><span class="muted">182 Mo / 5 Go</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:4%"></i></div>
+      <p class="note" style="margin-top:10px">Les quotas sont appliqués côté serveur : les modifier dans l'administration prend effet immédiatement, sans redéploiement.</p>
+    </div>
+  </div>
+
+  <h2>2 · Cours analysé et résumé sourcé</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><div><h3>Biologie cellulaire — chapitre 1</h3><p class="muted">PDF · 2 pages · 3 chapitres · prêt</p></div><span class="badge ok">READY</span></div>
+      <p class="eyebrow" style="margin-top:14px">Résumé général</p>
+      <p>La cellule est l'unité structurale et fonctionnelle du vivant. Le chloroplaste, organite spécialisé, y déroule la photosynthèse : il contient de la chlorophylle qui capte l'énergie lumineuse. La membrane plasmique, bicouche lipidique, contrôle les échanges entre la cellule et son milieu.</p>
+      <p class="eyebrow">Notions essentielles</p>
+      <table>
+        <tr><th>Notion</th><th>Définition</th><th>Page</th></tr>
+        <tr><td>Le chloroplaste</td><td>Organite cellulaire spécialisé dans lequel se déroule la photosynthèse.</td><td>1</td></tr>
+        <tr><td>La membrane plasmique</td><td>Bicouche lipidique qui contrôle les échanges avec le milieu extérieur.</td><td>1</td></tr>
+        <tr><td>La mitochondrie</td><td>Organite responsable de la respiration et de la production d'ATP.</td><td>2</td></tr>
+      </table>
+      <div class="source">Source : page 1 — « Le chloroplaste : organite cellulaire spécialisé dans lequel se déroule la photosynthèse. »</div>
+      <p class="badge warn" style="margin-top:12px">Mode démonstration — contenu extrait de votre cours, sans modèle distant</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">À vérifier sur le document</p>
+      <p class="muted">· Page 3 : passage possiblement illisible (caractères non reconnus), vérifiez l'original.</p>
+      <p class="muted">· Pages sans texte exploitable détectées : 4.</p>
+      <p class="eyebrow" style="margin-top:16px">Formules repérées</p>
+      <p class="muted">6 CO₂ + 6 H₂O + lumière = C₆H₁₂O₆ + 6 O₂</p>
+      <p class="eyebrow" style="margin-top:16px">Actions</p>
+      <p><a class="btn ghost" href="#">Ouvrir la fiche de révision</a> <a class="btn ghost" href="#">Générer des cartes</a></p>
+      <p class="note" style="margin-top:14px">Un passage douteux est signalé, jamais inventé : c'est une règle du produit, pas une option.</p>
+    </div>
+  </div>
+
+  <h2>3 · Révision (rappel actif + répétition espacée)</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><span class="muted">Carte 3 / 12</span><span class="badge warn">Fragile · maîtrise 42/100</span></div>
+      <h3 style="margin-top:10px">Quelle est la fonction du chloroplaste ?</h3>
+      <p class="muted">Restituez la réponse sans regarder votre cours, puis vérifiez.</p>
+      <div style="background:var(--memo-50);border-radius:12px;padding:12px;margin:12px 0"><p class="eyebrow" style="margin:0 0 4px">Réponse attendue</p><p style="margin:0">Organite cellulaire spécialisé dans lequel se déroule la photosynthèse ; il contient de la chlorophylle.</p></div>
+      <p><a class="btn ghost" href="#">Oublié — revoir très tôt</a> <a class="btn ghost" href="#">Difficile</a> <a class="btn" href="#">Bien</a> <a class="btn ghost" href="#">Facile</a></p>
+      <p class="muted" style="font-style:italic">Pourquoi cette carte ? Proposée car notion encore fragile.</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">File du jour, priorisée</p>
+      <table>
+        <tr><th>Notion</th><th>Statut</th><th>Justification</th></tr>
+        <tr><td>Mitochondrie</td><td><span class="badge bad">Non maîtrisée</span></td><td>2 oublis consécutifs</td></tr>
+        <tr><td>Chloroplaste</td><td><span class="badge warn">Fragile</span></td><td>Révision due</td></tr>
+        <tr><td>Membrane plasmique</td><td><span class="badge ok">Maîtrisée</span></td><td>Entretien espacé</td></tr>
+      </table>
+      <p class="note" style="margin-top:12px">Sur Android, une session hors connexion enregistre les réponses localement et les envoie à la reconnexion : rien n'est perdu.</p>
+    </div>
+  </div>
+
+  <h2>4 · Évaluation corrigée</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><div><h3>Épreuve de biologie cellulaire</h3><p class="muted">Mixte · 4 questions · 20 min · barème 15 points</p></div><span class="badge ok">GRADED</span></div>
+      <p class="kpi" style="margin:12px 0 0">8 / 15</p>
+      <p class="muted">53 % · mention Passable</p>
+      <div class="bar" style="margin:10px 0 16px"><i style="width:53%"></i></div>
+      <p class="eyebrow">Détail question par question</p>
+      <p><strong>Q1 · QCM</strong> — 1 / 1 <span class="badge ok">Correct</span><br><span class="muted">D'après votre document (page 1) : « Le chloroplaste : organite cellulaire spécialisé… »</span></p>
+      <p><strong>Q4 · Question ouverte</strong> — 3 / 5 <span class="badge warn">Partiel</span><br><span class="muted">Grille : définition 2/2 · exactitude des notions 1/1,5 · exemple pertinent 0/1,5</span></p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Erreurs récurrentes</p>
+      <p class="muted">· Confusion entre respiration et photosynthèse (2 fois ce mois).</p>
+      <p class="eyebrow" style="margin-top:14px">Recommandations</p>
+      <p class="muted">· Revoir la mitochondrie avec 6 cartes dédiées ; refaire l'épreuve en difficulté « moyen » dans 3 jours.</p>
+      <p class="eyebrow" style="margin-top:14px">Historique</p>
+      <table>
+        <tr><th>Date</th><th>Épreuve</th><th>Note</th></tr>
+        <tr><td>23/11</td><td>Biologie cellulaire</td><td>8/15</td></tr>
+        <tr><td>16/11</td><td>Biochimie</td><td>12/20</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h2>5 · Planning et Pomodoro</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row"><div><h3>Semaine du 23 novembre</h3><p class="muted">Disponibilités : lun–ven 18:00–21:00 · 2 séances max/jour</p></div><span class="badge brand">vue semaine</span></div>
+      <table>
+        <tr><th>Jour</th><th>Séance</th><th>Motif</th></tr>
+        <tr><td>Lun 18:00</td><td>Révisions dues (4 cartes)</td><td>Répétition espacée due</td></tr>
+        <tr><td>Lun 19:00</td><td>Biologie — notions fragiles</td><td>Échéance dans 3 jours</td></tr>
+        <tr><td>Mar 18:00</td><td>Physique — exercices</td><td>Lacunes détectées</td></tr>
+      </table>
+      <p class="note" style="margin-top:12px">Aucune séance hors des disponibilités, jamais le week-end, pauses incluses. Une séance manquée est replanifiée sans surcharger les jours suivants.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="eyebrow">Pomodoro</p>
+      <p class="kpi" style="font-size:44px">25:00</p>
+      <p class="muted">4 cycles · pause courte 5 min · pause longue 15 min</p>
+      <p style="margin-top:14px"><a class="btn" href="#">Démarrer la concentration</a></p>
+      <p class="note" style="margin-top:14px;text-align:left">Chaque session terminée alimente les statistiques réelles : le temps affiché n'est jamais simulé.</p>
+    </div>
+  </div>
+
+  <h2>6 · Assistant et mode professeur</h2>
+  <div class="grid two">
+    <div class="card">
+      <p class="eyebrow">Vous</p>
+      <p>Explique-moi simplement l'équation bilan de la photosynthèse.</p>
+      <p class="eyebrow">MÉMO CAMPUS · mode démonstration</p>
+      <p>D'après votre cours (page 1) : « 6 CO₂ + 6 H₂O + lumière = C₆H₁₂O₆ + 6 O₂ ». Les six molécules de dioxyde de carbone et les six molécules d'eau captent l'énergie lumineuse pour produire du glucose et libérer de l'oxygène.</p>
+      <div class="source">Page 1 · Biologie cellulaire — « L'équation bilan de la photosynthèse s'écrit : 6 CO₂ + 6 H₂O + lumière = … »</div>
+      <p class="note" style="margin-top:12px">Réponse produite en mode démonstration à partir de vos documents. Aucun lien vidéo inventé : seules des ressources vérifiées sont proposées.</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Mode professeur</p>
+      <p><strong>Question 1 —</strong> Avant de calculer, peux-tu me dire ce que représente le glucose dans cette réaction ?</p>
+      <p class="muted">Indice disponible · difficulté adaptative selon vos réponses · une seule question à la fois.</p>
+      <p class="badge brand">Mode professeur actif</p>
+      <p class="note" style="margin-top:12px">L'assistant nécessite Internet : l'application l'indique avant toute question.</p>
+    </div>
+  </div>
+
+  <h2>7 · Application Android</h2>
+  <div class="grid three">
+    <div class="phone">
+      <p class="eyebrow">Accueil</p>
+      <h3 style="font-size:16px">Bonjour, Awa</h3>
+      <p class="muted" style="font-size:12px">Offre Premium</p>
+      <div class="card" style="box-shadow:none;padding:10px"><p class="eyebrow" style="margin:0">À revoir</p><div class="kpi" style="font-size:22px">12</div></div>
+      <p style="margin:10px 0"><a class="btn" style="font-size:12px;padding:8px 12px" href="#">Réviser maintenant</a></p>
+      <div class="tabs"><span>🏠 Accueil</span><span>📚 Cours</span><span>＋ Importer</span><span>🧠 Réviser</span><span>👤 Profil</span></div>
+    </div>
+    <div class="phone">
+      <p class="eyebrow">Cours · hors connexion</p>
+      <div style="background:var(--warn-bg);border-radius:10px;padding:8px;font-size:11px;color:var(--warn);margin-bottom:8px">
+        Hors connexion — 2 cours téléchargés · 3 réponses en attente d'envoi
+      </div>
+      <p style="font-size:13px"><strong>Biologie cellulaire</strong><br><span class="muted" style="font-size:11px">Résumé et fiche disponibles</span></p>
+      <p style="font-size:13px"><strong>Physique — photo</strong><br><span class="muted" style="font-size:11px">OCR terminé · 1 passage à vérifier</span></p>
+      <p class="muted" style="font-size:11px">La génération IA, l'import et la correction d'épreuve nécessitent Internet.</p>
+      <div class="tabs"><span>🏠</span><span>📚</span><span>＋</span><span>🧠</span><span>👤</span></div>
+    </div>
+    <div class="phone dark" style="border-color:#334155">
+      <p class="eyebrow">Révision · thème sombre</p>
+      <p style="font-size:13px"><strong>Quelle est la fonction de la mitochondrie ?</strong></p>
+      <p class="muted" style="font-size:11px">Carte 5 / 12 · maîtrise 30/100</p>
+      <p style="margin:10px 0"><a class="btn" style="font-size:12px;padding:8px 12px" href="#">Afficher la réponse</a></p>
+      <p class="muted" style="font-size:11px">Réponse enregistrée localement puis synchronisée automatiquement.</p>
+      <div class="tabs"><span>🏠</span><span>📚</span><span>＋</span><span>🧠</span><span>👤</span></div>
+    </div>
+  </div>
+
+  <h2>8 · Espace d'administration</h2>
+  <div class="grid three">
+    <div class="card"><p class="eyebrow">Comptes</p><div class="kpi">128</div><p class="muted">112 étudiants · 9 enseignants · 1 admin</p></div>
+    <div class="card"><p class="eyebrow">Revenus du mois</p><div class="kpi">157 500 FCFA</div><p class="muted">45 paiements validés par webhook signé</p></div>
+    <div class="card"><p class="eyebrow">Coût IA</p><div class="kpi">3 820 FCFA</div><p class="muted">≈ 12 FCFA par document analysé</p></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <p class="eyebrow">Offres et quotas (modifiables en base)</p>
+    <table>
+      <tr><th>Offre</th><th>Prix mensuel</th><th>Cours/mois</th><th>Générations IA</th><th>Stockage</th></tr>
+      <tr><td>Découverte</td><td>0 FCFA</td><td>3</td><td>10</td><td>100 Mo</td></tr>
+      <tr><td>Premium</td><td>3 500 FCFA</td><td>60</td><td>400</td><td>5 Go</td></tr>
+      <tr><td>Institution</td><td>sur devis</td><td>2 000</td><td>10 000</td><td>50 Go</td></tr>
+    </table>
+    <p class="note" style="margin-top:12px">Aucun prix ni quota n'est codé en dur : tout est administrable. Un abonnement ne s'active qu'après un webhook signé et vérifié — jamais sur capture d'écran.</p>
+  </div>
+
+  <p class="muted" style="margin:34px 0 10px;text-align:center">
+    MÉMO CAMPUS — maquette de présentation · interface réelle : Next.js (Web) et React Native/Expo (Android) · 100 % français
+  </p>
+</div>
+</body>
+</html>

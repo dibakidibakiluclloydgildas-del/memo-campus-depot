@@ -1,0 +1,707 @@
+// =============================================================================
+// MÉMO CAMPUS — Schéma de base de données (PostgreSQL 17 + pgvector)
+// Isolation multi-locataire : chaque ressource porte un `userId` (et
+// éventuellement `institutionId`) ; aucune requête métier ne lit une ligne
+// sans filtre d'appartenance (voir SecurityService / guards).
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector, pgcrypto, pg_trgm]
+}
+
+// ----------------------------------------------------------------------------
+// Organisations / établissements
+// ----------------------------------------------------------------------------
+
+model Institution {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(160)
+  slug        String   @unique @db.VarChar(80)
+  country     String   @default("CM") @db.VarChar(2)
+  city        String?  @db.VarChar(120)
+  contactEmail String? @db.VarChar(200)
+  seats       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     User[]
+  groups      Group[]
+  licenses    License[]
+
+  @@index([isActive])
+}
+
+model Group {
+  id            String   @id @default(uuid()) @db.Uuid
+  institutionId String   @db.Uuid
+  name          String   @db.VarChar(120)
+  description   String?  @db.VarChar(500)
+  createdAt     DateTime @default(now())
+
+  institution Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+}
+
+model GroupMember {
+  id       String @id @default(uuid()) @db.Uuid
+  groupId  String @db.Uuid
+  userId   String @db.Uuid
+  role     String @default("MEMBER") @db.VarChar(20)
+  joinedAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model License {
+  id            String    @id @default(uuid()) @db.Uuid
+  institutionId String    @db.Uuid
+  planCode      String    @default("INSTITUTION") @db.VarChar(20)
+  seats         Int       @default(30)
+  startsAt      DateTime  @default(now())
+  expiresAt     DateTime
+  isActive      Boolean   @default(true)
+  reference     String?   @db.VarChar(120)
+  createdAt     DateTime  @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  @@index([institutionId, isActive])
+}
+
+// ----------------------------------------------------------------------------
+// Comptes, sécurité, organisations
+// ----------------------------------------------------------------------------
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  email          String    @unique @db.VarChar(254)
+  passwordHash   String
+  displayName    String    @db.VarChar(80)
+  role           String    @default("STUDENT") @db.VarChar(20)
+  isActive       Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  institution    String?   @db.VarChar(120)
+  level          String?   @db.VarChar(60)
+  field          String?   @db.VarChar(120)
+  specialty      String?   @db.VarChar(120)
+  goal           String?   @db.VarChar(500)
+  locale         String    @default("fr") @db.VarChar(5)
+  timezone       String    @default("Africa/Douala") @db.VarChar(60)
+  preferences    Json      @default("{}")
+  institutionId  String?   @db.Uuid
+  planCode       String    @default("FREE") @db.VarChar(20)
+  lastLoginAt    DateTime?
+  failedLogins   Int       @default(0)
+  lockedUntil    DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  institutionRef Institution? @relation(fields: [institutionId], references: [id], onDelete: SetNull)
+
+  sessions        Session[]
+  passwordResets  PasswordResetToken[]
+  auditLogs       AuditLog[]
+  subjects        Subject[]
+  documents       Document[]
+  summaries       Summary[]
+  flashcards      Flashcard[]
+  reviews         ReviewLog[]
+  assessments     Assessment[]
+  conversations   Conversation[]
+  planningBlocks  PlanningBlock[]
+  availabilities  Availability[]
+  studySessions   StudySession[]
+  goals           Goal[]
+  favorites       ResourceFavorite[]
+  notifications   Notification[]
+  payments        Payment[]
+  subscriptions   Subscription[]
+  aiUsage         AiUsage[]
+  groupMemberships GroupMember[]
+  progress        ChapterProgress[]
+  reports         Report[]
+
+  @@index([planCode])
+  @@index([institutionId])
+  @@index([deletedAt])
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  tokenHash    String   @unique
+  userAgent    String?  @db.VarChar(300)
+  ip           String?  @db.VarChar(64)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  action    String   @db.VarChar(80)
+  resource  String   @db.VarChar(80)
+  resourceId String? @db.Uuid
+  metadata  Json     @default("{}")
+  ip        String?  @db.VarChar(64)
+  userAgent String?  @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// Offres, quotas, paiements
+// ----------------------------------------------------------------------------
+
+model Plan {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique @db.VarChar(20)
+  name            String   @db.VarChar(60)
+  description     String   @default("") @db.VarChar(500)
+  priceXafMonthly Int      @default(0)
+  priceXafYearly  Int      @default(0)
+  quotas          Json     @default("{}")
+  features        Json     @default("[]")
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Subscription {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  planCode      String    @db.VarChar(20)
+  status        String    @default("ACTIVE") @db.VarChar(20)
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  provider      String?   @db.VarChar(20)
+  providerRef   String?   @db.VarChar(160)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model Payment {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  provider    String   @db.VarChar(20)
+  providerRef String?  @unique @db.VarChar(160)
+  planCode    String   @db.VarChar(20)
+  amountXaf   Int
+  currency    String   @default("XAF") @db.VarChar(3)
+  status      String   @default("PENDING") @db.VarChar(20)
+  months      Int      @default(1)
+  phoneNumber String?  @db.VarChar(20)
+  receiptUrl  String?  @db.VarChar(500)
+  metadata    Json     @default("{}")
+  /** Idempotence des webhooks : un événement fournisseur n'est traité qu'une fois. */
+  webhookEvents WebhookEvent[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paidAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  provider    String   @db.VarChar(20)
+  externalId  String   @db.VarChar(200)
+  eventType   String   @db.VarChar(80)
+  payload     Json
+  paymentId   String?  @db.Uuid
+  processedAt DateTime?
+  error       String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, externalId])
+  @@index([processedAt])
+}
+
+model AiUsage {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  feature       String   @db.VarChar(60)
+  provider      String   @db.VarChar(20)
+  model         String   @db.VarChar(80)
+  mode          String   @db.VarChar(10)
+  promptTokens  Int      @default(0)
+  outputTokens  Int      @default(0)
+  costUsdCents  Int      @default(0)
+  latencyMs     Int      @default(0)
+  success       Boolean  @default(true)
+  errorCode     String?  @db.VarChar(80)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([feature, createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// Contenus : matières, documents, chapitres, chunks indexés
+// ----------------------------------------------------------------------------
+
+model Subject {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  name      String   @db.VarChar(80)
+  code      String?  @db.VarChar(20)
+  color     String   @default("#2563eb") @db.VarChar(7)
+  level     String   @default("INTERMEDIAIRE") @db.VarChar(20)
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents      Document[]
+  assessments    Assessment[]
+  planningBlocks PlanningBlock[]
+  flashcards     Flashcard[]
+  goals          Goal[]
+  chapters       Chapter[]
+
+  @@unique([userId, name])
+  @@index([userId, archived])
+}
+
+model Document {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  subjectId     String?   @db.Uuid
+  title         String    @db.VarChar(160)
+  originalName  String    @db.VarChar(255)
+  mimeType      String    @db.VarChar(120)
+  sizeBytes     Int
+  storageKey    String    @unique @db.VarChar(300)
+  checksum      String    @db.VarChar(64)
+  pageCount     Int?
+  language      String    @default("fr") @db.VarChar(5)
+  status        String    @default("UPLOADED") @db.VarChar(20)
+  statusMessage String?   @db.VarChar(500)
+  progress      Int       @default(0)
+  ocrUsed       Boolean   @default(false)
+  ocrPages      Int       @default(0)
+  errorDetails  Json?
+  metadata      Json      @default("{}")
+  archived      Boolean   @default(false)
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  pages     DocumentPage[]
+  chapters  Chapter[]
+  chunks    Chunk[]
+  summaries Summary[]
+
+  @@index([userId, status])
+  @@index([userId, subjectId])
+  @@index([userId, archived])
+}
+
+model DocumentPage {
+  id         String  @id @default(uuid()) @db.Uuid
+  documentId String  @db.Uuid
+  pageNumber Int
+  text       String
+  usedOcr    Boolean @default(false)
+  confidence Float?
+  charCount  Int     @default(0)
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, pageNumber])
+  @@index([documentId])
+}
+
+model Chapter {
+  id         String  @id @default(uuid()) @db.Uuid
+  documentId String  @db.Uuid
+  subjectId  String? @db.Uuid
+  title      String  @db.VarChar(200)
+  orderIndex Int     @default(0)
+  pageFrom   Int?
+  pageTo     Int?
+  summary    String?
+  createdAt  DateTime @default(now())
+
+  document Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  subject  Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  chunks   Chunk[]
+  progress ChapterProgress[]
+
+  @@index([documentId, orderIndex])
+  @@index([subjectId])
+}
+
+model ChapterProgress {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  chapterId     String   @db.Uuid
+  masteryScore  Int      @default(0)
+  status        String   @default("NOUVELLE") @db.VarChar(20)
+  reviewedCount Int      @default(0)
+  lastActivityAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@index([userId, status])
+}
+
+model Chunk {
+  id         String  @id @default(uuid()) @db.Uuid
+  documentId String  @db.Uuid
+  chapterId  String? @db.Uuid
+  page       Int?
+  orderIndex Int
+  content    String
+  tokenCount Int     @default(0)
+  embedding  Unsupported("vector(768)")?
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chapter  Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+
+  @@index([documentId, orderIndex])
+  @@index([chapterId])
+}
+
+// ----------------------------------------------------------------------------
+// Productions pédagogiques
+// ----------------------------------------------------------------------------
+
+model Summary {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  documentId String   @db.Uuid
+  title      String   @db.VarChar(200)
+  mode       String   @default("demo") @db.VarChar(10)
+  provider   String?  @db.VarChar(20)
+  model      String?  @db.VarChar(80)
+  payload    Json
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([documentId])
+}
+
+model Flashcard {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  documentId String?  @db.Uuid
+  chapterId  String?  @db.Uuid
+  subjectId  String?  @db.Uuid
+  question   String
+  answer     String
+  hint       String?
+  sourceRef  Json     @default("{}")
+  ease       Float    @default(2.5)
+  intervalDays Float  @default(0)
+  repetitions Int     @default(0)
+  lapses     Int      @default(0)
+  masteryScore Int    @default(0)
+  masteryStatus String @default("NOUVELLE") @db.VarChar(20)
+  dueAt      DateTime @default(now())
+  lastReviewedAt DateTime?
+  suspended  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject?    @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  reviews ReviewLog[]
+
+  @@index([userId, dueAt])
+  @@index([userId, masteryStatus])
+  @@index([userId, subjectId])
+}
+
+model ReviewLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  flashcardId  String   @db.Uuid
+  grade        String   @db.VarChar(10)
+  durationMs   Int      @default(0)
+  intervalBefore Float  @default(0)
+  intervalAfter  Float  @default(0)
+  createdAt    DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([flashcardId])
+}
+
+model Assessment {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  subjectId   String?   @db.Uuid
+  title       String    @db.VarChar(160)
+  type        String    @db.VarChar(10)
+  difficulty  String    @default("MOYEN") @db.VarChar(10)
+  durationMinutes Int   @default(30)
+  mode        String    @default("demo") @db.VarChar(10)
+  provider    String?   @db.VarChar(20)
+  status      String    @default("DRAFT") @db.VarChar(20)
+  documentIds String[]  @default([])
+  maxScore    Float     @default(0)
+  score       Float?
+  percentage  Float?
+  startedAt   DateTime?
+  submittedAt DateTime?
+  autoSubmitted Boolean @default(false)
+  report      Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  questions AssessmentQuestion[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model AssessmentQuestion {
+  id           String  @id @default(uuid()) @db.Uuid
+  assessmentId String  @db.Uuid
+  orderIndex   Int
+  type         String  @db.VarChar(10)
+  prompt       String
+  choices      Json    @default("[]")
+  correctChoiceIds String[] @default([])
+  expectedAnswer String?
+  gradingRubric Json   @default("[]")
+  keyPoints    String[] @default([])
+  explanation  String?
+  points       Float   @default(1)
+  difficulty   String  @default("MOYEN") @db.VarChar(10)
+  cognitiveLevel String @default("CONNAISSANCE") @db.VarChar(20)
+  sourceRef    Json    @default("{}")
+  answer       Json?
+  awarded      Float?
+  feedback     String?
+  needsHumanReview Boolean @default(false)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId, orderIndex])
+}
+
+// ----------------------------------------------------------------------------
+// Organisation du travail
+// ----------------------------------------------------------------------------
+
+model PlanningBlock {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  subjectId String?  @db.Uuid
+  title     String   @db.VarChar(120)
+  type      String   @default("REVISION") @db.VarChar(20)
+  startAt   DateTime
+  endAt     DateTime
+  priority  Int      @default(3)
+  status    String   @default("PLANIFIE") @db.VarChar(20)
+  notes     String?
+  rationale String?  @db.VarChar(400)
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startAt])
+  @@index([userId, status])
+}
+
+model Availability {
+  id          String @id @default(uuid()) @db.Uuid
+  userId      String @db.Uuid
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekday, startMinute])
+  @@index([userId])
+}
+
+model StudySession {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  subjectId  String?  @db.Uuid
+  kind       String   @default("POMODORO") @db.VarChar(20)
+  focusMinutes Int    @default(25)
+  breakMinutes Int    @default(5)
+  cycles      Int     @default(1)
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  completed  Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+}
+
+model Goal {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  subjectId String?  @db.Uuid
+  title     String   @db.VarChar(160)
+  targetType String  @default("REVIEWS") @db.VarChar(20)
+  targetValue Int    @default(10)
+  currentValue Int   @default(0)
+  dueAt     DateTime?
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+}
+
+// ----------------------------------------------------------------------------
+// Assistant IA
+// ----------------------------------------------------------------------------
+
+model Conversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  subjectId String?  @db.Uuid
+  title     String   @default("Nouvelle conversation") @db.VarChar(160)
+  mode      String   @default("TUTEUR") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ConversationMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model ConversationMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @db.Uuid
+  role           String   @db.VarChar(10)
+  content        String
+  citations      Json     @default("[]")
+  mode           String   @default("demo") @db.VarChar(10)
+  tokens         Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// Ressources externes, notifications, signalements
+// ----------------------------------------------------------------------------
+
+model ResourceFavorite {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  subjectId  String?  @db.Uuid
+  kind       String   @default("VIDEO") @db.VarChar(20)
+  title      String   @db.VarChar(200)
+  url        String   @db.VarChar(500)
+  source     String   @db.VarChar(120)
+  description String? @db.VarChar(500)
+  /** Provenance : seule une URL réellement vérifiée peut être enregistrée. */
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  kind      String   @db.VarChar(40)
+  title     String   @db.VarChar(160)
+  body      String   @db.VarChar(800)
+  data      Json     @default("{}")
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Report {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  targetType String   @db.VarChar(40)
+  targetId   String?  @db.Uuid
+  reason     String   @db.VarChar(500)
+  status     String   @default("OPEN") @db.VarChar(20)
+  createdAt  DateTime @default(now())
+  resolvedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
