@@ -38,4 +38,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -fsS http://127.0.0.1:3000/ > /dev/null || exit 1
 
-CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]
+CMD ["sh", "-c", "../node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]
