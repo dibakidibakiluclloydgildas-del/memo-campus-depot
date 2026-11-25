@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4000';
+const API_BASE = (process.env.API_URL ?? process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4000').trim().replace(/\/+$/, '');
 export const SESSION_COOKIE = 'memo_session';
 
 export class ApiError extends Error {
