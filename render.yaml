@@ -1,3 +1,5 @@
+=== render.yaml (remplacer TOUT le fichier) ===
+
 # =============================================================================
 # MÉMO CAMPUS — Blueprint Render (lien permanent, base PostgreSQL, HTTPS)
 #
@@ -7,6 +9,13 @@
 # Deux services : l'API (port 4000) et le Web (port 3000). Le Web parle à l'API
 # côté serveur : aucune clé, aucun secret n'est exposé au navigateur.
 # =============================================================================
+databases:
+  # Déclarée ici : Render la crée et injecte DATABASE_URL dans memo-api (plus de copier-coller).
+  - name: memo-campus-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "17"
+
 services:
   # ----------------------------------------------------------------- API -----
   - type: web
@@ -37,9 +46,11 @@ services:
         value: local
       - key: EMBEDDINGS_DIM
         value: 768
-      # Renseignés à la main dans Render (voir RENDER.md §4)
+      # Injectée automatiquement depuis la base déclarée en haut du fichier
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: memo-campus-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: APP_URL
