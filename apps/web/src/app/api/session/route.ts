@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ApiError, SESSION_COOKIE } from '@/lib/api';
 
-const API_BASE = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4000';
+const API_BASE = (process.env.API_URL ?? process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:4000').trim().replace(/\/+$/, '');
 
 type Action = 'login' | 'register' | 'logout' | 'demo';
 
