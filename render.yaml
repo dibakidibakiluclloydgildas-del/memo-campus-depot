@@ -39,7 +39,7 @@ services:
       - key: AI_PROVIDER
         value: demo
       - key: RUN_SEED_ON_START
-        value: true
+        value: trueS
       - key: AI_DEMO_MODE
         value: true
       - key: EMBEDDINGS_PROVIDER
